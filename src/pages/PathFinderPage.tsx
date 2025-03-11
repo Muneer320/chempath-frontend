@@ -44,13 +44,13 @@ const PathFinderPage: React.FC = () => {
   const [selectedPathIndex, setSelectedPathIndex] = useState(0);
 
   // Fetch compound suggestions for autocomplete
-  const { data: compoundSuggestions, isLoading: suggestionsLoading } = useQuery(
-    {
-      queryKey: ["compoundSuggestions"],
-      queryFn: () => apiService.getCompounds(),
-      staleTime: 300000, // 5 minutes
-    }
-  );
+  const { data: compoundSuggestions, isLoading: suggestionsLoading } = useQuery<
+    CompoundResponse[]
+  >({
+    queryKey: ["compoundSuggestions"],
+    queryFn: () => apiService.getCompounds(),
+    staleTime: 300000, // 5 minutes
+  });
 
   // Find paths mutation
   const pathMutation = useMutation({
@@ -71,10 +71,15 @@ const PathFinderPage: React.FC = () => {
             return {
               formula: compound.formula,
               properties: {
-                name: (compound as any).name || undefined,
-                molecular_weight: (compound as any).molecular_weight,
-                state: (compound as any).state,
-                class: (compound as any).class,
+                name: "name" in compound ? (compound as any).name : undefined,
+                molecular_weight:
+                  "molecular_weight" in compound
+                    ? (compound as any).molecular_weight
+                    : undefined,
+                state:
+                  "state" in compound ? (compound as any).state : undefined,
+                class:
+                  "class" in compound ? (compound as any).class : undefined,
               },
             };
           }),
@@ -121,10 +126,8 @@ const PathFinderPage: React.FC = () => {
   // Get compound options for autocomplete
   const getCompoundOptions = () => {
     if (!compoundSuggestions) return [];
-    return compoundSuggestions.map((compound) => {
-      const name = compound.properties?.name
-        ? ` (${compound.properties.name})`
-        : "";
+    return compoundSuggestions.map((compound: CompoundResponse) => {
+      const name = compound.name ? ` (${compound.name})` : "";
       return `${compound.formula.toUpperCase()}${name}`;
     });
   };
